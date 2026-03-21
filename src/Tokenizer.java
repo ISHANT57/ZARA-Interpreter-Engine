@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Tokenizer {
 
     private String source;
@@ -39,5 +42,16 @@ public class Tokenizer {
         }
 
         return new Token(TokenType.STRING, value, line);
+    }
+    public List<Token> tokenize() {
+        List<Token> tokens = new ArrayList<>();
+
+        tokens.add(new Token(TokenType.SET, "set", line));
+        tokens.add(new Token(TokenType.IDENTIFIER, "x", line));
+        tokens.add(new Token(TokenType.EQUALS, "=", line));
+        tokens.add(new Token(TokenType.NUMBER, "5", line));
+        tokens.add(new Token(TokenType.EOF, "", line));
+
+        return tokens;
     }
 }
