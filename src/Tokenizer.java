@@ -1,43 +1,101 @@
-public class Tokenizer {
+import java.util.ArrayList;
+import java.util.List;
 
-    private String source;
-    private int pos = 0;
-    private int line = 1;
+public class Tokenizer {
+    private final String source;
+    private int pos;
+    private int line;
 
     public Tokenizer(String source) {
         this.source = source;
+        this.pos = 0;
+        this.line = 1;
     }
 
-    private Token readNumber() {
-        int start = pos;
+    public List<Token> tokenize() {
+        List<Token> tokens = new ArrayList<>();
 
-        while (pos < source.length() &&
-                (Character.isDigit(source.charAt(pos)) || source.charAt(pos) == '.')) {
-            pos++;
-        }
+        while (pos < source.length()) {
 
-        String value = source.substring(start, pos);
-        return new Token(TokenType.NUMBER, value, line);
-    }
+            char current = source.charAt(pos);
 
-    private Token readString() {
-        pos++;
+            if (Character.isWhitespace(current)) {
+                skipSpaces();
+                continue;
+            }
 
-        int start = pos;
+            if (Character.isDigit(current)) {
+                tokens.add(readNumber());
+                continue;
+            }
 
-        while (pos < source.length() && source.charAt(pos) != '"') {
-            if (source.charAt(pos) == '\n') {
-                line++;
+            if (current == '"') {
+                tokens.add(readString());
+                continue;
+            }
+
+            if (current == '=') {
+                tokens.add(new Token(TokenType.EQUALS, "=", line));
+                pos++;
+                continue;
+            }
+
+            if (Character.isLetter(current)) {
+                tokens.add(readIdentifier());
+                continue;
             }
             pos++;
         }
 
-        String value = source.substring(start, pos);
+        tokens.add(new Token(TokenType.EOF, "", line));
+        return tokens;
+    }
 
-        if (pos < source.length()) {
+    private void skipSpaces() {
+        while (pos < source.length() && Character.isWhitespace(source.charAt(pos))) {
+            if (source.charAt(pos) == '\n') line++;
+            pos++;
+        }
+    }
+
+    private Token readNumber() {
+        int start = pos;
+        while (pos < source.length() &&
+                (Character.isDigit(source.charAt(pos)) || source.charAt(pos) == '.')) {
+            pos++;
+        }
+        return new Token(TokenType.NUMBER, source.substring(start, pos), line);
+    }
+
+    private Token readString() {
+        pos++;
+        int start = pos;
+        while (pos < source.length() && source.charAt(pos) != '"') {
+            if (source.charAt(pos) == '\n') line++;
             pos++;
         }
 
-        return new Token(TokenType.STRING, value, line);
+        String text = source.substring(start, pos);
+        if (pos < source.length()) pos++;
+        return new Token(TokenType.STRING, text, line);
     }
+
+    private Token readIdentifier() {
+        int start = pos;
+        while (pos < source.length() &&
+                Character.isLetterOrDigit(source.charAt(pos))) {
+            pos++;
+        }
+
+        String text = source.substring(start, pos);
+
+        if (text.equals("set")) {
+            return new Token(TokenType.SET, text, line);
+        }
+        if (text.equals("show")) {
+            return new Token(TokenType.SHOW, text, line);
+        }
+        return new Token(TokenType.IDENTIFIER, text, line);
+    }
+
 }
