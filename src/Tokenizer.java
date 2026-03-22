@@ -97,5 +97,4 @@ public class Tokenizer {
         }
         return new Token(TokenType.IDENTIFIER, text, line);
     }
-
 }
