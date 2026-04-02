@@ -57,7 +57,6 @@ public class Parser {
         return new PrintInstruction(expr);
     }
 
-    // ✅ FIXED IF
     private Instruction parseIf() {
         consume(TokenType.WHEN);
         Expression condition = parseExpression();
