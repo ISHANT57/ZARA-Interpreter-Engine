@@ -1,0 +1,81 @@
+parseExpression() → +, -, >, <, ==
+parseTerm() → *, /
+
+5>2+3 - fails as (5>3)+3 --- true +3 (type mismatch ) 
+
+fixed --
+
+parseExpression()   → comparison (>, <, ==)
+parseAdditive()     → +, -
+parseTerm()         → *, /
+parsePrimary()      → numbers, variables
+
+Replace your parseExpression() with this:
+
+// Parse comparison: >, <, ==
+private Expression parseExpression() {
+    Expression left = parseAdditive();
+
+    while (current().getType() == TokenType.GT ||
+           current().getType() == TokenType.LT ||
+           current().getType() == TokenType.EQEQ) {
+
+        String op = current().getValue();
+        pos++;
+        Expression right = parseAdditive();
+
+        left = new BinaryOpNode(left, op, right);
+    }
+
+    return left;
+}
+
+add new method 
+
+
+// Parse +, -
+private Expression parseAdditive() {
+    Expression left = parseTerm();
+
+    while (current().getType() == TokenType.PLUS ||
+           current().getType() == TokenType.MINUS) {
+
+        String op = current().getValue();
+        pos++;
+        Expression right = parseTerm();
+
+        left = new BinaryOpNode(left, op, right);
+    }
+
+    return left;
+}
+
+
+rest same ;
+
+LOW precedence → TOP function
+HIGH precedence → DEEP function
+
+
+┌─────────────────────────────────────────────────┐
+│  PARSER = Recursive Descent Parser              │
+│                                                 │
+│  Input: List<Token>                             │
+│  Output: List<Instruction>                      │
+│                                                 │
+│  Strategy: Top-down, predictive parsing         │
+│                                                 │
+│  Grammar Hierarchy:                             │
+│  parse() → parseInstruction()                   │
+│      ├─ parseAssign()                           │
+│      ├─ parsePrint()                            │
+│      ├─ parseIf()                               │
+│      └─ parseLoop()                             │
+│           └─ parseExpression()                  │
+│                └─ parseTerm()                   │
+│                     └─ parsePrimary()           │
+│                          └─ (recursion)        │
+│                                                 │
+│  Key: Operator precedence via method nesting   │
+│  Left-associativity via iterative loops        │
+└─────────────────────────────────────────────────┘
