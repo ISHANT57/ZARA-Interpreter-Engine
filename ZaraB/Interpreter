@@ -1,0 +1,35 @@
+┌─────────────────────────────────────────────┐
+│ INTERPRETER PIPELINE                        │
+│                                             │
+│ Source Code                                 │
+│      ↓                                       │
+│ ┌─────────────────────────────────────────┐ │
+│ │ PHASE 1: TOKENIZATION (Lexical Analysis)│ │
+│ │ ────────────────────────────────────────│ │
+│ │ Input: String                           │ │
+│ │ Process: Break into tokens              │ │
+│ │ Output: List<Token>                     │ │
+│ │ Tool: Tokenizer                         │ │
+│ └─────────────────────────────────────────┘ │
+│      ↓                                       │
+│ ┌─────────────────────────────────────────┐ │
+│ │ PHASE 2: PARSING (Syntax Analysis)      │ │
+│ │ ────────────────────────────────────────│ │
+│ │ Input: List<Token>                      │ │
+│ │ Process: Build AST                      │ │
+│ │ Output: List<Instruction> (AST)         │ │
+│ │ Tool: Parser                            │ │
+│ └─────────────────────────────────────────┘ │
+│      ↓                                       │
+│ ┌─────────────────────────────────────────┐ │
+│ │ PHASE 3: EXECUTION (Interpretation)     │ │
+│ │ ────────────────────────────────────────│ │
+│ │ Input: List<Instruction>                │ │
+│ │ Process: Execute each instruction       │ │
+│ │ Output: Side effects (printed output)   │ │
+│ │ Tool: Interpreter (with Environment)    │ │
+│ └─────────────────────────────────────────┘ │
+│      ↓                                       │
+│ Console Output                              │
+│                                             │
+└─────────────────────────────────────────────┘
