@@ -79,3 +79,155 @@ HIGH precedence → DEEP function
 │  Key: Operator precedence via method nesting   │
 │  Left-associativity via iterative loops        │
 └─────────────────────────────────────────────────┘
+
+
+
+BUG2 -------------------------------------(BINARYOPNODE)
+
+
+⚠️ CASE 2: 10 + "5" (Type Coercion Problem)
+❌ Current behavior
+10.0 + "5" → "10.05"
+
+👉 Because Double → "10.0" (string conversion)
+
+
+
+SOLN - JAVA LIKE -If any operand is String → convert both to String
+
+
+if (op.equals("+")) {
+
+    // If either is string → concat
+    if (leftVal instanceof String || rightVal instanceof String) {
+        return String.valueOf(leftVal) + String.valueOf(rightVal);
+    }
+
+    // Otherwise numeric
+    if (leftVal instanceof Double && rightVal instanceof Double) {
+        return (Double) leftVal + (Double) rightVal;
+    }
+}
+
+BUG3 -------------------------------------------------BINARYOPNODE)
+
+⚠️ CASE 3: 0.1 + 0.2 == 0.3
+❌ Problem
+0.1 + 0.2 = 0.30000000000000004
+
+👉 Floating point precision issue (IEEE 754)
+
+
+if (op.equals("==")) {
+
+    if (leftVal instanceof Double && rightVal instanceof Double) {
+        double a = (Double) leftVal;
+        double b = (Double) rightVal;
+
+        double EPSILON = 1e-9;
+
+        return Math.abs(a - b) < EPSILON;
+    }
+
+    return leftVal.equals(rightVal);
+}
+
+
+
+
+
+BUG4-----------------------------------(TOKENIZER)
+4. "set\r\nx = 10" (Windows CRLF)
+   → '\r' and '\n' दोनों whitespace
+   → पर line counter सिर्फ '\n' के लिए increment होता है
+   ⚠️ Bug potential! Line numbers wrong हो सकते हैं
+
+
+
+
+FIX------public Tokenizer(String source) {
+    // Normalize all line endings to \n
+    this.source = source.replace("\r\n", "\n")
+                        .replace("\r", "\n");
+
+    this.pos = 0;
+    this.line = 1;
+}
+
+BUG----------------------------(PARSELOOP)
+
+Current loop condition:
+
+while (current().getType() != TokenType.EOF &&
+       current().getType() != TokenType.LOOP)
+
+👉 This does not detect block end
+👉 It only stops at EOF or another LOOP ❌
+
+🚀 IF YOU WANT REAL FIX (BEST)
+
+👉 Use { } blocks
+
+loop 3: {
+    show x
+    set x = x + 1
+}
+show "Done"
+
+👉 Cleaner + no hacks
+
+Fix---
+(tokenizer) 🧠 1. TOKENIZER UPDATE (Already almost done)
+
+👉 Your tokenizer already supports { and } ✅
+(from your code 👉 )
+
+case '{': pos++; return new Token(TokenType.LBRACE, "{", line);
+case '}': pos++; return new Token(TokenType.RBRACE, "}", line);
+
+👉 So NO CHANGE needed here ✔️
+
+🔥 2. PARSER FIX (MAIN PART)
+✅ Replace your parseLoop() with thi
+
+ // ------------------ LOOP (FIXED WITH { }) ------------------
+
+    private Instruction parseLoop() {
+        consume(TokenType.LOOP);
+
+        String numStr = consume(TokenType.NUMBER).getValue();
+
+        int times;
+        try {
+            double val = Double.parseDouble(numStr);
+            if (val % 1 != 0 || val < 0) {
+                throw new RuntimeException("Loop count must be a non-negative integer");
+            }
+            times = (int) val;
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid loop count: " + numStr);
+        }
+
+        consume(TokenType.COLON);
+        consume(TokenType.LBRACE);   // {
+
+        List<Instruction> body = new ArrayList<>();
+
+        while (current().getType() != TokenType.RBRACE &&
+               current().getType() != TokenType.EOF) {
+
+            body.add(parseInstruction());
+
+            if (current().getType() == TokenType.NEWLINE) {
+                consume(TokenType.NEWLINE);
+            }
+        }
+
+        if (current().getType() == TokenType.EOF) {
+            throw new RuntimeException("Missing '}' for loop block");
+        }
+
+        consume(TokenType.RBRACE);   // }
+
+        return new RepeatInstruction(times, body);
+    }
