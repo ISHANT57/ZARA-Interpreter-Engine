@@ -1,0 +1,88 @@
+┌──────────────────────────────────────────────────────────────────┐
+│                     ZARA INTERPRETER PIPELINE                    │
+│                                                                  │
+│  INPUT: .zara source file                                       │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ STEP 1: TOKENIZATION (Tokenizer.java)                       ││
+│  │ ─────────────────────────────────────────────────────────── ││
+│  │                                                              ││
+│  │ Input: "set x = 10 + 5"                                     ││
+│  │                                                              ││
+│  │ Process:                                                     ││
+│  │ 1. Character-by-character scan (pos pointer)               ││
+│  │ 2. Type identification:                                      ││
+│  │    - 's' → 'set' keyword check → SET token                 ││
+│  │    - ' ' → whitespace → skip                                ││
+│  │    - 'x' → identifier → IDENTIFIER token                    ││
+│  │    - ' ' → skip                                              ││
+│  │    - '=' → symbol → EQUALS token                            ││
+│  │    - '1','0' → digits → NUMBER(10) token                    ││
+│  │    - '+' → symbol → PLUS token                              ││
+│  │    - '5' → digit → NUMBER(5) token                          ││
+│  │    - EOF → add EOF token                                     ││
+│  │                                                              ││
+│  │ Output Token List:                                           ││
+│  │ [SET, IDENTIFIER(x), EQUALS, NUMBER(10), PLUS, NUMBER(5), EOF]
+│  └─────────────────────────────────────────────────────────────┘│
+│                            ↓                                     │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ STEP 2: PARSING (Parser.java)                               ││
+│  │ ─────────────────────────────────────────────────────────── ││
+│  │                                                              ││
+│  │ Input: Token list                                            ││
+│  │ [SET, IDENTIFIER(x), EQUALS, NUMBER(10), PLUS, NUMBER(5), EOF]
+│  │                                                              ││
+│  │ Grammar-based Parsing (Recursive Descent):                  ││
+│  │                                                              ││
+│  │ parse()                                                      ││
+│  │   → parseInstruction()                                        ││
+│  │       → parseAssign()                                         ││
+│  │           1. consume(SET) ✓                                 ││
+│  │           2. consume(IDENTIFIER) → name = "x"               ││
+│  │           3. consume(EQUALS) ✓                              ││
+│  │           4. parseExpression()                               ││
+│  │               → parseTerm()                                   ││
+│  │                   → parsePrimary()                            ││
+│  │                       → NUMBER(10) → NumberNode(10.0)       ││
+│  │               Loop: current() = PLUS                         ││
+│  │               → parseTerm()                                   ││
+│  │                   → parsePrimary()                            ││
+│  │                       → NUMBER(5) → NumberNode(5.0)         ││
+│  │               → BinaryOpNode(NumberNode(10), "+", NumberNode(5))
+│  │           5. return AssignInstruction("x", expr)            ││
+│  │   → current() = EOF, loop exits                             ││
+│  │                                                              ││
+│  │ Output: AST (Abstract Syntax Tree)                           ││
+│  │ [ AssignInstruction("x",                                     ││
+│  │       BinaryOpNode(NumberNode(10), "+", NumberNode(5))      ││
+│  │ ]                                                             ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                            ↓                                     │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ STEP 3: EXECUTION (Interpreter.java + Environment.java)    ││
+│  │ ─────────────────────────────────────────────────────────── ││
+│  │                                                              ││
+│  │ Input: AST + Empty Environment                              ││
+│  │ env = {  }                                                   ││
+│  │                                                              ││
+│  │ Execute Instruction 1: AssignInstruction("x", expr)         ││
+│  │   1. Evaluate expression: expr.evaluate(env)                ││
+│  │       → BinaryOpNode.evaluate(env)                          ││
+│  │           → left.evaluate(env) = NumberNode(10).evaluate()  ││
+│  │                                 = 10.0                       ││
+│  │           → right.evaluate(env) = NumberNode(5).evaluate()  ││
+│  │                                 = 5.0                        ││
+│  │           → perform: 10.0 + 5.0 = 15.0                      ││
+│  │           → return 15.0                                      ││
+│  │   2. env.set("x", 15.0)                                      ││
+│  │                                                              ││
+│  │   Environment after execution:                               ││
+│  │   env = { "x" → 15.0 }                                       ││
+│  │                                                              ││
+│  │ All instructions processed → Done!                           ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                            ↓                                     │
+│  OUTPUT: Side effects (variable values stored, output printed)  │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
