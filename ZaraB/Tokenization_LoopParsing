@@ -1,0 +1,105 @@
+Source: "when score > 50:"
+pos: 0
+
+Step 1: pos=0, char='w'
+├─ isLetter('w') = true
+├─ readIdentifierOrKeyword()
+│   └─ while: 'w','h','e','n' (pos=0→4)
+│   └─ word = "when"
+│   └─ switch: case "when" → Token(WHEN, "when", line=1)
+└─ pos=4, token added
+
+Step 2: pos=4, char=' '
+├─ isWhitespace(' ') = true
+├─ skipSpaces()
+│   └─ while: ' ' (pos=4→5)
+└─ pos=5, continue
+
+Step 3: pos=5, char='s'
+├─ isLetter('s') = true
+├─ readIdentifierOrKeyword()
+│   └─ 's','c','o','r','e' (pos=5→10)
+│   └─ word = "score"
+│   └─ not a keyword → Token(IDENTIFIER, "score", line=1)
+└─ pos=10, token added
+
+Step 4: pos=10, char=' '
+├─ skipSpaces()
+└─ pos=11
+
+Step 5: pos=11, char='>'
+├─ readSymbol()
+├─ case '>': pos++; return Token(GT, ">", line=1)
+└─ pos=12
+
+Step 6: pos=12, char=' '
+├─ skipSpaces()
+└─ pos=13
+
+Step 7: pos=13, char='5'
+├─ isDigit('5') = true
+├─ readNumber()
+│   └─ '5','0' (pos=13→15)
+│   └─ num = "50"
+│   └─ valid number
+│   └─ Token(NUMBER, "50", line=1)
+└─ pos=15
+
+Step 8: pos=15, char=':'
+├─ readSymbol()
+├─ case ':': pos++; return Token(COLON, ":", line=1)
+└─ pos=16
+
+Step 9: pos=16
+├─ pos >= source.length()
+├─ exit while loop
+└─ add Token(EOF, "", line=1)
+
+Output Tokens:
+[WHEN(when), IDENTIFIER(score), GT(>), NUMBER(50), COLON(:), EOF]
+
+Edge Cases:
+1. "when  score" (extra spaces) → skipSpaces() handles
+2. "score2var" → identifier "score2var" (digit allowed mid-word)
+3. "2score" → NUMBER(2), then IDENTIFIER(score)
+4. ">" vs ">=" → lookahead, but ZARA doesn't support ">="
+
+
+
+Loop parsing 
+
+
+Example Code:
+loop 3:
+    set i = 1
+    loop 2:
+        show i
+
+Parsing Phase:
+parseLoop() called (pos at LOOP token)
+├─ consume(LOOP) → pos++
+├─ consume(NUMBER) → numStr = "3", times = 3
+├─ consume(COLON) → pos++
+├─ while (current != EOF && current != LOOP):
+│   ├─ Iteration 1: current = SET
+│   │   ├─ parseInstruction() → parseAssign()
+│   │   └─ AssignInstruction("i", NumberNode(1))
+│   ├─ Iteration 2: current = LOOP (nested!)
+│   │   ├─ parseInstruction() → parseLoop() [recursive!]
+│   │   ├─ Inner parseLoop():
+│   │   │   ├─ consume(LOOP)
+│   │   │   ├─ times = 2
+│   │   │   ├─ consume(COLON)
+│   │   │   ├─ while: current = SHOW
+│   │   │   │   └─ parseInstruction() → parsePrint()
+│   │   │   └─ current = EOF (or next token after show)
+│   │   │   └─ exit inner while
+│   │   │   └─ return RepeatInstruction(2, [PrintInstruction])
+│   │   ├─ AssignInstruction added to outer body
+│   │   └─ current = EOF
+│   └─ Iteration 3: loop condition check
+│       └─ current = EOF → exit while
+└─ return RepeatInstruction(3, [AssignInstruction, RepeatInstruction(2, ...)])
+
+LIMITATION:
+Problem: Loop body को कब end करना है?
