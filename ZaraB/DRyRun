@@ -1,0 +1,143 @@
+🏆 COMPLETE EXECUTION WALK-THROUGH
+Program:
+zaraset x = 10
+set y = 3
+set result = x + y * 2
+show result
+Full Pipeline:
+PHASE 1: TOKENIZATION
+Input: "set x = 10\nset y = 3\nset result = x + y * 2\nshow result"
+ give properly in a table
+Output Tokens:
+[
+    Token(SET, "set", 1),
+    Token(IDENTIFIER, "x", 1),
+    Token(EQUALS, "=", 1),
+    Token(NUMBER, "10", 1),
+    Token(NEWLINE, "\n", 2),
+    Token(SET, "set", 2),
+    Token(IDENTIFIER, "y", 2),
+    Token(EQUALS, "=", 2),
+    Token(NUMBER, "3", 2),
+    Token(NEWLINE, "\n", 3),
+    Token(SET, "set", 3),
+    Token(IDENTIFIER, "result", 3),
+    Token(EQUALS, "=", 3),
+    Token(IDENTIFIER, "x", 3),
+    Token(PLUS, "+", 3),
+    Token(IDENTIFIER, "y", 3),
+    Token(MULTIPLY, "*", 3),
+    Token(NUMBER, "2", 3),
+    Token(NEWLINE, "\n", 4),
+    Token(SHOW, "show", 4),
+    Token(IDENTIFIER, "result", 4),
+    Token(EOF, "", 4)
+]
+PHASE 2: PARSING
+Input: Token list
+
+Parsing steps:
+parse() → parseInstruction() loop
+
+Instruction 1: parseAssign()
+├─ consume(SET) ✓
+├─ consume(IDENTIFIER) → name = "x"
+├─ consume(EQUALS) ✓
+├─ parseExpression() → NumberNode(10.0)
+└─ AssignInstruction("x", NumberNode(10.0))
+
+Instruction 2: parseAssign()
+├─ consume(SET) ✓
+├─ consume(IDENTIFIER) → name = "y"
+├─ consume(EQUALS) ✓
+├─ parseExpression() → NumberNode(3.0)
+└─ AssignInstruction("y", NumberNode(3.0))
+
+Instruction 3: parseAssign()
+├─ consume(SET) ✓
+├─ consume(IDENTIFIER) → name = "result"
+├─ consume(EQUALS) ✓
+├─ parseExpression()
+│   ├─ parseTerm() → VariableNode("x")
+│   ├─ op = PLUS
+│   ├─ parseTerm()
+│   │   ├─ parsePrimary() → VariableNode("y")
+│   │   ├─ op = MULTIPLY
+│   │   ├─ parsePrimary() → NumberNode(2.0)
+│   │   └─ BinaryOpNode(VariableNode("y"), "*", NumberNode(2.0))
+│   └─ BinaryOpNode(VariableNode("x"), "+", BinaryOpNode(...))
+└─ AssignInstruction("result", BinaryOpNode(...))
+
+Instruction 4: parsePrint()
+├─ consume(SHOW) ✓
+├─ parseExpression() → VariableNode("result")
+└─ PrintInstruction(VariableNode("result"))
+
+Output AST:
+[
+    AssignInstruction("x", NumberNode(10.0)),
+    AssignInstruction("y", NumberNode(3.0)),
+    AssignInstruction("result", 
+        BinaryOpNode(
+            VariableNode("x"),
+            "+",
+            BinaryOpNode(VariableNode("y"), "*", NumberNode(2.0))
+        )
+    ),
+    PrintInstruction(VariableNode("result"))
+]
+PHASE 3: EXECUTION
+Initial Environment: {}
+
+Instruction 1 Execute:
+├─ name = "x"
+├─ value.evaluate(env) = NumberNode(10.0).evaluate() = 10.0
+└─ env.set("x", 10.0)
+Environment after: { "x" → 10.0 }
+
+Instruction 2 Execute:
+├─ name = "y"
+├─ value.evaluate(env) = NumberNode(3.0).evaluate() = 3.0
+└─ env.set("y", 3.0)
+Environment after: { "x" → 10.0, "y" → 3.0 }
+
+Instruction 3 Execute:
+├─ name = "result"
+├─ value.evaluate(env) = BinaryOpNode.evaluate(env)
+│   ├─ left.evaluate(env) = VariableNode("x").evaluate(env) = env.get("x") = 10.0
+│   ├─ right.evaluate(env) = BinaryOpNode.evaluate(env)
+│   │   ├─ left.evaluate(env) = VariableNode("y").evaluate(env) = 3.0
+│   │   ├─ right.evaluate(env) = NumberNode(2.0).evaluate(env) = 2.0
+│   │   ├─ op = "*"
+│   │   └─ 3.0 * 2.0 = 6.0
+│   ├─ op = "+"
+│   └─ 10.0 + 6.0 = 16.0
+└─ env.set("result", 16.0)
+Environment after: { "x" → 10.0, "y" → 3.0, "result" → 16.0 }
+
+Instruction 4 Execute:
+├─ value.evaluate(env) = VariableNode("result").evaluate(env)
+│   └─ env.get("result") = 16.0
+├─ System.out.println(16.0)
+
+Output to console: 16.0
+
+Memory Tricks for Each Class:
+TOKENIZER:        Char-by-char scanner, state machine, lookahead
+TOKEN:            Data holder (type, value, line)
+TOKENTYPE:        Enum categories
+PARSER:           Recursive descent, grammar rules, precedence
+INSTRUCTION:      Command pattern, execute() contract
+ASSIGNINSTRUCTION: Evaluate expression, store in environment
+PRINTINSTRUCTION:  Evaluate expression, output to console
+IFINSTRUCTION:     Conditional execution, truthy check
+REPEATINSTRUCTION: Loop body N times
+EXPRESSION:       Tree node, recursive evaluation
+NUMBERNODE:       Return double literal
+STRINGNODE:       Return string literal
+VARIABLENODE:     Lookup in environment
+BINARYOPNODE:     Recursive evaluation of operands, operation
+
+ENVIRONMENT:      HashMap symbol table
+INTERPRETER:      Three-phase pipeline coordinator
+MAIN:             File I/O, error handling, program entry 
